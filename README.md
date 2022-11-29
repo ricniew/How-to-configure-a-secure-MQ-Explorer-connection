@@ -18,13 +18,14 @@ Content
 This asset describes an example scenario for a secure IBM MQ Explorer connection. 
 It is **only** an example and needs to be tested to verify that it meets the existing requirements.
 
+For better cut and paste all commands mentioned below here in a text file.
 
 2 Sample scenario
 ==================
 
 **A.** On a **ServerHost** (here Linux) 
 
-1. create the test MQ Queue Manager
+1. create the test MQ Queue Manager (here called **ssltestqm**)
     ``` 
     endmqm ssltestqm ; sleep 2; dltmqm ssltestqm ; sleep 2;  crtmqm ssltestqm ; sleep 2;  strmqm ssltestqm
     ``` 
@@ -58,7 +59,7 @@ It is **only** an example and needs to be tested to verify that it meets the exi
 **C.** Transfer the created `mqexplorer.crt` (extracted cleint certificate) to the queue mangager on **ServerHost**. Into the folder `/var/mqm/qmgrs/ssltestqm/ssl`
 
 
-**D.** on Queue manager **ServerHost** (here Linux)
+**D.** on Queue Manager **ssltestqm** on **ServerHost** (here Linux)
 
 1. Create server SSL server key database
     ```
@@ -99,10 +100,13 @@ It is **only** an example and needs to be tested to verify that it meets the exi
     runmqckm -cert -list -db mqexplorer.jks  -pw clientpazzword
     ```
 
-**F.** on Queue manager **ServerHost** (here Linux)
+**F.** on Queue manager **ssltestqm** on **ServerHost**
+
+Here it is Linux. All names, PORT numbers or SSLCIPH values can be changed. They are specific for this example.
+
 1. Configure your Queue Manager MGR using for example `runmqsc ssltestqm`
     ```
-    define LISTENER(ssltestqm.LISTENER) TRPTYPE(TCP) PORT(8414) CONTROL(QMGR)
+    DEFINE LISTENER(ssltestqm.LISTENER) TRPTYPE(TCP) PORT(8414) CONTROL(QMGR)
     START LISTENER(ssltestqm.LISTENER) 
     DEFINE CHANNEL(SSL.ADMIN) CHLTYPE(SVRCONN) 
     DEFINE QLOCAL(MYQ) 
@@ -123,15 +127,16 @@ It is **only** an example and needs to be tested to verify that it meets the exi
     
 **E.** On **MQ Explorer**
 
-To connect MQ Explorer to new server "ssltestqm" using SSL
+To connect MQ Explorer to new server "ssltestqm" using SSL. All names, PORT numbers or SSLCIPH values can be changed. They are specific for this example.
+
 1. add new remote queue manager connection
 1. Select the Queue Manager Name (in this example "ssltestqm"), and connection Method, in this example: Connect DIrectly
 1. Specify New Connection Details: Set hostname and port (in this example 8414) and Server Connection Channel (in this example "SSL.ADMIN")
 1. Specify User authentication Details and set your user
 1. Specify SSL Certificate key repository Details and pointed to "c:\mqexplorer_keystore\mqexplorer.jks" keystore for both truststore and keystore 
-1. Specify SSL Options Details Cipherspec, in this example set it to ECDHE_RSA_AES_128_CBC_SHA256 
+1. Specify SSL Options Details Cipherspec, in this example set it to ECDHE_RSA_AES_128_CBC_SHA256  
 
-
+DONE
 
 
 
