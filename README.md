@@ -18,7 +18,7 @@ Content
 This asset describes an example scenario for a secure IBM MQ Explorer connection. 
 It is **only** an example and needs to be tested to verify that it meets the existing requirements.
 
-For better cut and paste all commands mentioned below here in a text file.
+For better cut and paste all commands mentioned below here in a [text file](https://github.com/ricniew/How-to-configure-a-secure-MQ-Explorer-connection/blob/main/ContentAsText)
 
 2 Sample scenario
 ==================
