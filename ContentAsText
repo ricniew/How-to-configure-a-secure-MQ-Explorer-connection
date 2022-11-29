@@ -1,0 +1,80 @@
+# A. on qmgr server (Linux) create the test qmgr
+endmqm ssltestqm ; sleep 2; dltmqm ssltestqm ; sleep 2;  crtmqm ssltestqm ; sleep 2;  strmqm ssltestqm
+# create a mqm user if required
+adduser myuser
+usermod -a -G mqm  userid
+passwd myuser
+  
+
+# B. on client (MQ Explorer)
+cd c:\
+mkdir mqexplorer_keystore
+cd mqexplorer_keystore
+# 1 Client Create SSL client key database 
+# 2 Client Create the certificate
+# 3 extract the cert
+runmqckm -keydb -create -db mqexplorer.jks  -pw clientpazzword -type jks  
+runmqckm -cert -create -db mqexplorer.jks -pw clientpazzword -label ibmwebspheremqmqexplorer -dn "CN=mqexplorer,O=HDI,C=DE" -expire 365  
+runmqckm -cert -extract -db mqexplorer.jks -pw clientpazzword -label ibmwebspheremqmqexplorer -target mqexplorer.crt -format ascii  
+# transfer mqexplorer.crt  to the qmgr host cd /var/mqm/qmgrs/ssltestqm/ssl
+ 
+ 
+# C. on server (Linux)
+cd /var/mqm/qmgrs/ssltestqm/ssl
+# 1 Create server SSL server key database
+# 2 Create server certificate
+# 3 List the server certificate
+# 4 Add the client certificate to server db
+# 5 List the server certificates
+# 6 Extract the public SSL server certificate and copy it to the SSL client side
+#1-3
+runmqckm -keydb -create -db ssltestqm.kdb  -pw serverpazzword -type cms -expire 365 -stash
+runmqckm -cert -create -db  ssltestqm.kdb -pw serverpazzword -label ibmwebspheremqssltestqm -dn "CN=ssltestqm,O=HDI,C=DE" -expire 365
+runmqckm -cert -list -db ssltestqm.kdb  -pw serverpazzword
+# if you did not transfer the mqexplorer.crt from MQ Explorer host yet, do it now
+# set owner permission mqm:mqm for mqexplorer.crt
+#4-6
+runmqckm -cert -add -db ssltestqm.kdb -pw serverpazzword -label ibmwebspheremqmqexplorer -file mqexplorer.crt -format ascii
+runmqckm -cert -list -db ssltestqm.kdb  -pw serverpazzword
+runmqckm -cert -extract -db ssltestqm.kdb -pw serverpazzword -label ibmwebspheremqssltestqm -target ssltestqm.crt -format ascii
+# transver ssltestqm.crt to client host (MQ Explorer) 
+  
+
+# D. on client
+cd c:\mqexplorer_keystore
+# 1 Copy the public SSL server certificate to the SSL client side 
+# 2 List Client certs
+# if you did not transfer the ssltestqm.crt from qmgr host yet, do it now
+#1-2  
+runmqckm -cert -add -db mqexplorer.jks -pw clientpazzword -label ibmwebspheremqssltestqm -file ssltestqm.crt -format ascii
+runmqckm -cert -list -db mqexplorer.jks  -pw clientpazzword
+ 
+
+# E. server as mqm
+# configure your QMGR
+runmqsc ssltestqm
+define LISTENER(ssltestqm.LISTENER) TRPTYPE(TCP) PORT(8414) CONTROL(QMGR)
+START LISTENER(ssltestqm.LISTENER) 
+DEFINE CHANNEL(SSL.ADMIN) CHLTYPE(SVRCONN) 
+DEFINE QLOCAL(MYQ) 
+ALTER QMGR SSLKEYR('/var/mqm/qmgrs/ssltestqm/ssl/ssltestqm')
+ALTER QMGR SSLFIPS(NO)
+DEFINE CHANNEL('SSL.ADMIN') CHLTYPE(SVRCONN) TRPTYPE(TCP) SSLCIPH(ECDHE_RSA_AES_128_CBC_SHA256) SSLCAUTH(REQUIRED) REPLACE
+SET CHLAUTH(SSL.ADMIN) TYPE(BLOCKUSER) USERLIST('nobody')
+REFRESH SECURITY TYPE(SSL)
+end
+# Set permisssions 
+cd  /var/mqm/qmgrs/ssltestqm/ssl
+chmod 770 *
+# Grant  "myuser" or any other you access to qmgr
+setmqaut -m ssltestqm -t qmgr -p myuser +connect +inq +dsp
+
+ 
+# F. MQ explorer connect to new server "ssltestqm" using SSL
+- add new remote queue manager connection
+- Select the Queue Manager Name (in this example "ssltestqm"), and connection Method, in this example: Connect DIrectly
+- Specify New Connection Details: Set hostname and port (in this example 8414) and Server Connection Channel (in this example "SSL.ADMIN")
+- Specify User authentication Details and set your user
+- Specify SSL Certificate key repository Details and pointed to "c:\mqexplorer_keystore\mqexplorer.jks" keystore for both truststore and keystore 
+- Specify SSL Options Details Cipherspec, in this example set it to ECDHE_RSA_AES_128_CBC_SHA256 
+------------------------------------------------------------------------------------------------------------------------------------------
