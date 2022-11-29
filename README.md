@@ -1,6 +1,5 @@
 # How-to-configure-a-secure-MQ-Explorer-connection
 
-IBM WebSphere: How to create a jdbc connection for a Snowflake Database <BR> 
 Version 1.0 <BR>
 
 - Richard Niewolik
